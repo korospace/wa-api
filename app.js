@@ -2,7 +2,8 @@
  * Import Lib
  */
 const express   = require('express');
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const fs        = require('fs');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { body, validationResult } = require('express-validator');
 const { phoneNumberFormatter } = require('./helpers/formatter');
 const socketIO  = require('socket.io');
@@ -17,9 +18,10 @@ const app    = express();
 const server = http.createServer(app);
 const io     = socketIO(server);
 
-app.use(express.json());
+app.use(express.json({limit:"50mb"}));
 app.use(express.urlencoded({
-  extended: true
+  extended: true,
+  limit: "50mb"
 }));
 
 (async() => {
@@ -190,7 +192,7 @@ app.use(express.urlencoded({
         }).catch(err => {
             res.status(500).json({
               status: false,
-              message: err
+              message: "haha"
             });
         });
       } 
@@ -203,6 +205,58 @@ app.use(express.urlencoded({
         });
       }
       
+  });
+
+  // send pdf 
+  let rulesSendPdfAsImg = [
+    body('tonumber').notEmpty(),
+    body('filename').notEmpty(),
+    body('binarypdf').notEmpty(),
+  ];
+
+  app.post('/sendpdf', rulesSendPdfAsImg, async (req, res) => {
+    // catch error rules
+    const errors = validationResult(req).formatWith(({
+      msg
+    }) => {
+      return msg;
+    });
+  
+    // send error rules
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: false,
+        message: errors.mapped()
+      });
+    }
+    
+    try {
+      let buffer   = Buffer.from(req.body.binarypdf, "base64");
+      let toNumber = phoneNumberFormatter(req.body.tonumber)
+      fs.writeFileSync("./imgFromPdf/" + req.body.filename + ".pdf",buffer)
+      
+      const media = MessageMedia.fromFilePath("./imgFromPdf/" + req.body.filename + ".pdf");
+
+      client.sendMessage(toNumber, media).then(response => {
+          res.status(200).json({
+            status: true,
+            message: 'media successfully sent'
+          });
+      }).catch(err => {
+          res.status(500).json({
+            status: false,
+            message: err
+          });
+      });
+    } 
+    catch (error) {
+      console.log("New Error: ",error);
+
+      return res.status(500).json({
+        status: false,
+        message: 'server error'
+      });
+    }
   });
 
   server.listen(port, function() {
