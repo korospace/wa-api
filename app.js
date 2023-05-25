@@ -233,16 +233,20 @@ app.use(express.urlencoded({
     try {
       let buffer   = Buffer.from(req.body.binarypdf, "base64");
       let toNumber = phoneNumberFormatter(req.body.tonumber)
-      fs.writeFileSync("./imgFromPdf/" + req.body.filename + ".pdf",buffer)
+      fs.writeFileSync("./tmppdf/" + req.body.filename + ".pdf",buffer)
       
-      const media = MessageMedia.fromFilePath("./imgFromPdf/" + req.body.filename + ".pdf");
+      const media = MessageMedia.fromFilePath("./tmppdf/" + req.body.filename + ".pdf");
 
       client.sendMessage(toNumber, media).then(response => {
+          fs.unlinkSync("./tmppdf/" + req.body.filename + ".pdf");
+
           res.status(200).json({
             status: true,
             message: 'media successfully sent'
           });
       }).catch(err => {
+          fs.unlinkSync("./tmppdf/" + req.body.filename + ".pdf");
+
           res.status(500).json({
             status: false,
             message: err
