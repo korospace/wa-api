@@ -5,7 +5,7 @@ const express   = require('express');
 const fs        = require('fs');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const { body, validationResult } = require('express-validator');
-const { phoneNumberFormatter } = require('./helpers/formatter');
+const { phoneNumberFormatter, isValidPhoneNumber } = require('./helpers/formatter');
 const socketIO  = require('socket.io');
 const qrcode    = require('qrcode');
 const http      = require('http');
@@ -124,12 +124,20 @@ app.use(express.urlencoded({
       }
 
       try {
+        // Periksa apakah nomor yang diformat valid
+        if (!isValidPhoneNumber(req.body.number)) {
+          return res.status(400).json({
+              status: false,
+              message: 'invalid phone number format'
+          });
+        }
+
         const isRegisteredNumber = await client.isRegisteredUser(phoneNumberFormatter(req.body.number));
       
         if (!isRegisteredNumber) {
           return res.status(404).json({
             status: false,
-            message: 'not registered'
+            message: 'wa not registered'
           });
         }
         else {
@@ -180,7 +188,7 @@ app.use(express.urlencoded({
         if (!isRegisteredNumber) {
           return res.status(404).json({
             status: false,
-            message: 'not registered'
+            message: 'wa not registered'
           });
         }
     
@@ -192,7 +200,7 @@ app.use(express.urlencoded({
         }).catch(err => {
             res.status(500).json({
               status: false,
-              message: "haha"
+              message: "server bussy"
             });
         });
       } 

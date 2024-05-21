@@ -15,6 +15,13 @@ const phoneNumberFormatter = function(number) {
   return formatted;
 }
 
+function isValidPhoneNumber(number) {
+  // Implementasikan logika validasi nomor telepon Anda di sini
+  // Contoh sederhana: memeriksa apakah nomor memiliki panjang yang benar
+  return number.length >= 10;
+}
+
 module.exports = {
-  phoneNumberFormatter
+  phoneNumberFormatter,
+  isValidPhoneNumber
 }
